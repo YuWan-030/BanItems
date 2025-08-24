@@ -1,5 +1,6 @@
 package me.alini.banitems.network;
 
+import me.alini.banitems.BanItemEntry;
 import me.alini.banitems.Config;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
@@ -34,13 +35,16 @@ public record S2CBanitemsList(Set<ItemStack> softBanItems, Set<ItemStack> hardBa
     public static void handle(S2CBanitemsList message, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             Config.softBanItems.clear();
-            message.softBanItems().forEach(stack ->
-                    Config.softBanItems.put(stack.hashCode(), me.alini.banitems.BanItemEntry.fromStack(stack))
-            );
+            message.softBanItems().forEach(stack -> {
+                BanItemEntry entry = BanItemEntry.fromStack(stack);
+                Config.softBanItems.put(entry.getKey(), entry);
+            });
+
             Config.hardBanItems.clear();
-            message.hardBanItems().forEach(stack ->
-                    Config.hardBanItems.put(stack.hashCode(), me.alini.banitems.BanItemEntry.fromStack(stack))
-            );
+            message.hardBanItems().forEach(stack -> {
+                BanItemEntry entry = BanItemEntry.fromStack(stack);
+                Config.hardBanItems.put(entry.getKey(), entry);
+            });
         });
         ctx.get().setPacketHandled(true);
     }

@@ -12,7 +12,10 @@ public class BanItem {
 
     public BanItem() {
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this);
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new me.alini.banitems.server.BanItemEventHandler());
+        BanItemRegistry.ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
+        Config.loadConfig();
     }
 
     private void setup(final FMLCommonSetupEvent event) {

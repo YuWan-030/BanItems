@@ -1,4 +1,3 @@
-
 package me.alini.banitems.client;
 
 import me.alini.banitems.Config;
@@ -13,6 +12,7 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class BanItemTooltipHandler {
     private static boolean shouldDarken = false;
@@ -20,9 +20,14 @@ public class BanItemTooltipHandler {
     @SubscribeEvent
     public static void onTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
-        shouldDarken = Config.isSoftBanned(stack);
-        if (shouldDarken) {
+        if (Config.isHardBanned(stack)) {
+            event.getToolTip().add(1, Component.literal("该物品已被硬封禁").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD));
+            shouldDarken = true;
+        } else if (Config.isSoftBanned(stack)) {
             event.getToolTip().add(1, Component.literal("该物品已被软封禁").withStyle(ChatFormatting.RED));
+            shouldDarken = true;
+        } else {
+            shouldDarken = false;
         }
     }
 }

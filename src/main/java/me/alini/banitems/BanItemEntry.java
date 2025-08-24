@@ -1,111 +1,96 @@
+// BanItemEntry.java
 package me.alini.banitems;
 
-import com.google.gson.annotations.SerializedName;
+import com.google.gson.JsonObject;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.resources.ResourceLocation;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.Objects;
 
 public class BanItemEntry {
-    public final String itemId;
+    private final String itemId;
+    private final String nbtHash;
+    private final String nbtString; // 新增：完整 NBT 字符串
 
-    @SerializedName("nbt")
-    private final String nbtString; // 用于Gson序列化
-    private transient CompoundTag nbt; // 运行时用
-
-    // 用于代码创建
-    public BanItemEntry(String itemId, CompoundTag nbt) {
+    public BanItemEntry(String itemId, String nbtHash, String nbtString) {
         this.itemId = itemId;
-        this.nbt = nbt == null ? null : nbt.copy();
-        this.nbtString = nbtToString(this.nbt);
-    }
-
-    // 用于Gson反序列化
-    public BanItemEntry(String itemId, String nbtString) {
-        this.itemId = itemId;
+        this.nbtHash = nbtHash;
         this.nbtString = nbtString;
-        this.nbt = stringToNbt(nbtString);
     }
 
     public static BanItemEntry fromStack(ItemStack stack) {
-        String id = Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(stack.getItem())).toString();
-        CompoundTag tag = stack.hasTag() ? stack.getTag().copy() : null;
-        return new BanItemEntry(id, tag);
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        String itemId = id != null ? id.toString() : "minecraft:air";
+        CompoundTag tag = stack.getTag();
+        String nbtHash = null;
+        String nbtString = null;
+        if (tag != null && !tag.isEmpty()) {
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                byte[] hash = digest.digest(tag.toString().getBytes(StandardCharsets.UTF_8));
+                nbtHash = Base64.getEncoder().encodeToString(hash);
+                nbtString = tag.toString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return new BanItemEntry(itemId, nbtHash, nbtString);
+    }
+
+    public String getKey() {
+        return itemId + "#" + (nbtHash != null ? nbtHash : "");
     }
 
     public ItemStack toStack() {
-        var item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(itemId));
+        ResourceLocation id = ResourceLocation.tryParse(itemId);
+        if (id == null) return ItemStack.EMPTY;
+        var item = ForgeRegistries.ITEMS.getValue(id);
         if (item == null) return ItemStack.EMPTY;
         ItemStack stack = new ItemStack(item);
-        if (nbt != null) stack.setTag(nbt.copy());
+        if (nbtString != null && !nbtString.isEmpty()) {
+            try {
+                CompoundTag tag = TagParser.parseTag(nbtString);
+                stack.setTag(tag);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         return stack;
     }
 
-    // 工具方法：去除 NBT 的 Damage 字段
-    private static CompoundTag stripDamage(CompoundTag nbt) {
-        if (nbt == null) return null;
-        CompoundTag copy = nbt.copy();
-        copy.remove("Damage");
-        return copy;
+    public JsonObject toJson() {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("itemId", itemId);
+        obj.addProperty("nbtHash", nbtHash);
+        obj.addProperty("nbtString", nbtString);
+        return obj;
     }
 
-    // NBT <-> String
-    private static String nbtToString(CompoundTag nbt) {
-        if (nbt == null) return null;
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            NbtIo.writeCompressed(nbt, out);
-            return Base64.getEncoder().encodeToString(out.toByteArray());
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static CompoundTag stringToNbt(String str) {
-        if (str == null || str.isEmpty()) return null;
-        try {
-            byte[] data = Base64.getDecoder().decode(str);
-            return NbtIo.readCompressed(new ByteArrayInputStream(data));
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    // 忽略耐久的hash
-    public static int hash(ItemStack stack) {
-        String id = ForgeRegistries.ITEMS.getKey(stack.getItem()).toString();
-        CompoundTag nbt = stack.hasTag() ? stripDamage(stack.getTag()) : null;
-        int nbtHash = nbt != null ? nbt.hashCode() : 0;
-        return Objects.hash(id, nbtHash);
-    }
-
-    // 忽略耐久的匹配
-    public static boolean matches(ItemStack stack, BanItemEntry entry) {
-        if (entry == null) return false;
-        if (!ForgeRegistries.ITEMS.getKey(stack.getItem()).toString().equals(entry.itemId)) return false;
-        CompoundTag stackNbt = stack.hasTag() ? stripDamage(stack.getTag()) : null;
-        CompoundTag entryNbt = entry.nbt != null ? stripDamage(entry.nbt) : null;
-        if (entryNbt == null && stackNbt == null) return true;
-        if (entryNbt != null && stackNbt != null) return entryNbt.equals(stackNbt);
-        return false;
+    public static BanItemEntry fromJson(JsonObject obj) {
+        return new BanItemEntry(
+                obj.get("itemId").getAsString(),
+                obj.has("nbtHash") && !obj.get("nbtHash").isJsonNull() ? obj.get("nbtHash").getAsString() : null,
+                obj.has("nbtString") && !obj.get("nbtString").isJsonNull() ? obj.get("nbtString").getAsString() : null
+        );
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof BanItemEntry other)) return false;
-        return Objects.equals(itemId, other.itemId) &&
-                Objects.equals(stripDamage(nbt), stripDamage(other.nbt));
+        if (!(o instanceof BanItemEntry)) return false;
+        BanItemEntry that = (BanItemEntry) o;
+        return Objects.equals(itemId, that.itemId) &&
+                Objects.equals(nbtHash, that.nbtHash);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(itemId, stripDamage(nbt));
+        return Objects.hash(itemId, nbtHash);
     }
 }

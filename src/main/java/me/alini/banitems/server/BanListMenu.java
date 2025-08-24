@@ -1,6 +1,7 @@
 // src/main/java/me/alini/banitems/server/BanListMenu.java
 package me.alini.banitems.server;
 
+import me.alini.banitems.BanItemEntry;
 import me.alini.banitems.Config;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
@@ -38,19 +39,11 @@ public class BanListMenu extends ChestMenu {
         if (slotId >= 0 && slotId < pageItems.size()) {
             ItemStack removed = this.getContainer().getItem(slotId);
             if (!removed.isEmpty()) {
+                BanItemEntry entry = BanItemEntry.fromStack(removed);
                 if (soft) {
-                    // 收集要移除的 key
-                    List<Integer> keysToRemove = Config.softBanItems.entrySet().stream()
-                            .filter(entry -> ItemStack.isSameItemSameTags(entry.getValue().toStack(), removed))
-                            .map(java.util.Map.Entry::getKey)
-                            .toList();
-                    keysToRemove.forEach(Config.softBanItems::remove);
+                    Config.softBanItems.remove(entry.getKey());
                 } else {
-                    List<Integer> keysToRemove = Config.hardBanItems.entrySet().stream()
-                            .filter(entry -> ItemStack.isSameItemSameTags(entry.getValue().toStack(), removed))
-                            .map(java.util.Map.Entry::getKey)
-                            .toList();
-                    keysToRemove.forEach(Config.hardBanItems::remove);
+                    Config.hardBanItems.remove(entry.getKey());
                 }
                 Config.saveConfig();
                 me.alini.banitems.server.BanItemSyncHandler.pushBanItemsToAllPlayers();

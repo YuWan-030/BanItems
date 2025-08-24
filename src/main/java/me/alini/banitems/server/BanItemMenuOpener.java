@@ -9,7 +9,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
-
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.ChatFormatting;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BanItemMenuOpener {
@@ -27,7 +29,28 @@ public class BanItemMenuOpener {
         int pageSize = 54;
         int from = page * pageSize;
         int to = Math.min(from + pageSize, banList.size());
-        List<ItemStack> pageItems = banList.subList(from, to);
+        List<ItemStack> pageItems = new ArrayList<>();
+        for (ItemStack stack : banList.subList(from, to)) {
+            ItemStack copy = stack.copy();
+            CompoundTag tag = copy.getTag();
+            if (tag != null && !tag.isEmpty()) {
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.literal("NBT:").withStyle(ChatFormatting.GOLD));
+                String nbtStr = tag.toString();
+                int maxLine = 60;
+                for (int i = 0; i < nbtStr.length(); i += maxLine) {
+                    int end = Math.min(i + maxLine, nbtStr.length());
+                    lore.add(Component.literal(nbtStr.substring(i, end)).withStyle(ChatFormatting.GRAY));
+                }
+                CompoundTag display = copy.getOrCreateTagElement("display");
+                net.minecraft.nbt.ListTag loreTag = new net.minecraft.nbt.ListTag();
+                for (Component line : lore) {
+                    loreTag.add(net.minecraft.nbt.StringTag.valueOf(Component.Serializer.toJson(line)));
+                }
+                display.put("Lore", loreTag);
+            }
+            pageItems.add(copy);
+        }
 
         player.openMenu(new SimpleMenuProvider(
                 (id, inv, p) -> new BanListMenu(id, inv, pageItems, soft, page),
@@ -35,3 +58,4 @@ public class BanItemMenuOpener {
         ));
     }
 }
+
