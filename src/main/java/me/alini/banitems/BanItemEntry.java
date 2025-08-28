@@ -32,10 +32,13 @@ public class BanItemEntry {
         String nbtString = null;
         if (tag != null && !tag.isEmpty()) {
             try {
+                // 复制一份 NBT 并移除 Damage 字段
+                CompoundTag tagCopy = tag.copy();
+                tagCopy.remove("Damage");
                 MessageDigest digest = MessageDigest.getInstance("SHA-256");
-                byte[] hash = digest.digest(tag.toString().getBytes(StandardCharsets.UTF_8));
+                byte[] hash = digest.digest(tagCopy.toString().getBytes(StandardCharsets.UTF_8));
                 nbtHash = Base64.getEncoder().encodeToString(hash);
-                nbtString = tag.toString();
+                nbtString = tagCopy.toString();
             } catch (Exception e) {
                 e.printStackTrace();
             }
