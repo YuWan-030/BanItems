@@ -100,11 +100,15 @@ public class BannedItem extends Item {
         sourceStack.getTooltipLines(null, flag).forEach(line -> components.add(Component.literal("  ").append(line)));
     }
 
+//    @Override
+//    public @NotNull Component getName(@NotNull ItemStack stack) {
+//        var data = stack.getOrCreateTagElement(DATA_KEY);
+//        var sourceStack = ItemStack.of(data);
+//        return sourceStack.getHoverName();
+//    }
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
-        var data = stack.getOrCreateTagElement(DATA_KEY);
-        var sourceStack = ItemStack.of(data);
-        return sourceStack.getHoverName();
+        return Component.translatable("item.banitems.banned_item");
     }
 
     static class BannedItemCustomRenderer extends BlockEntityWithoutLevelRenderer {

@@ -3,17 +3,20 @@ package me.alini.banitems;
 
 import com.google.gson.*;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Config {
-    private static final File CONFIG_FILE = new File("config/banitems.json");
+    private static final File CONFIG_FILE = new File("config/banitems/banitems.json");
 
     public static final Map<String, BanItemEntry> softBanItems = new LinkedHashMap<>();
     public static final Map<String, BanItemEntry> hardBanItems = new LinkedHashMap<>();
+    public static final Set<String> excludedItems = new HashSet<>(); //
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -28,6 +31,21 @@ public class Config {
         hardBanItems.put(entry.getKey(), entry);
     }
 
+    // 添加/移除排除物品
+    public static void addExcludedItem(String itemId) {
+        excludedItems.add(itemId);
+    }
+
+    public static void removeExcludedItem(String itemId) {
+        excludedItems.remove(itemId);
+    }
+
+    public static boolean isExcluded(ItemStack stack) {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        if (id == null) return false;
+        return excludedItems.contains(id.toString());
+    }
+
     // 移除封禁物品
     public static void removeSoftBanItem(ItemStack stack) {
         BanItemEntry entry = BanItemEntry.fromStack(stack);
@@ -38,6 +56,7 @@ public class Config {
         BanItemEntry entry = BanItemEntry.fromStack(stack);
         hardBanItems.remove(entry.getKey());
     }
+
 
     // 获取封禁物品
     public static Collection<BanItemEntry> getSoftBannedItems() {
@@ -75,34 +94,45 @@ public class Config {
         root.add("softBan", serializeBanItems(softBanItems.values()));
         root.add("hardBan", serializeBanItems(hardBanItems.values()));
 
+        // 序列化排除列表
+        JsonArray excludeArray = new JsonArray();
+        for (String s : excludedItems) excludeArray.add(s);
+        root.add("excluded", excludeArray);
+
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(CONFIG_FILE), StandardCharsets.UTF_8)) {
             GSON.toJson(root, writer);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+    //热重载
+    public static void reloadConfig() {
+        loadConfig();
+    }
 
     // 加载配置
     public static void loadConfig() {
         if (!CONFIG_FILE.exists()) {
-            // 自动创建空配置文件
             try {
                 CONFIG_FILE.getParentFile().mkdirs();
                 saveConfig();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            } catch (Exception e) { e.printStackTrace(); }
             return;
         }
         try (Reader reader = new InputStreamReader(new FileInputStream(CONFIG_FILE), StandardCharsets.UTF_8)) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             softBanItems.clear();
             hardBanItems.clear();
+            excludedItems.clear();
+
             loadBanItems(root.getAsJsonArray("softBan"), softBanItems);
             loadBanItems(root.getAsJsonArray("hardBan"), hardBanItems);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+            JsonArray excludeArray = root.getAsJsonArray("excluded");
+            if (excludeArray != null) {
+                for (JsonElement el : excludeArray) excludedItems.add(el.getAsString());
+            }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     // 辅助方法：反序列化

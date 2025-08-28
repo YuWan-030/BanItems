@@ -1,0 +1,18 @@
+{
+  "item.banitem.banned_item": "被软封禁的物品",
+  "info.banitem.command.reload": "BanItems 配置已重载！",
+  "info.banitem.command.item.added": "已将此物品软封禁",
+  "info.banitem.command.item.removed": "已解除此物品的软封禁",
+  "info.banitem.command.item.already_added": "此物品已经被软封禁",
+  "info.banitem.command.item.not_banned": "此物品从未被软封禁",
+  "info.banitem.command.item.list": "被软封禁的物品: ",
+  "info.banitem.command.item.list_empty": "目前没有被软封禁的物品",
+  "info.banitem.command.reload": "BanItems 配置已重载！",
+  "info.banitem.item.remove": "此物品对应模组已被移除, 物品将被清空",
+  "info.banitem.item.steal_banned": "此物品在此世界已被软封禁!",
+  "info.banitem.item.pardon": "此物品已解除软封禁",
+  "info.banitem.item.pardon_by_operator": "您是管理员, 此物品已被暂时解除软封禁",
+  "info.banitem.item.info": "物品信息:",
+  "item.banitems.banned_item": "一个被软封禁的物品",
+  "info.banitem.crafting.banned": "此物品已被软封禁, 无法合成"
+}

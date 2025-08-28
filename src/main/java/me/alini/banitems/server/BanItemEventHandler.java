@@ -27,7 +27,7 @@ public class BanItemEventHandler {
                 softBanned = Config.isSoftBanned(stack);
             } catch (Throwable ignored) {}
 
-            if (softBanned && stack.getItem() != BANNED_ITEM.get()) {
+            if (softBanned && stack.getItem() != BANNED_ITEM.get() && !Config.isExcluded(stack)) {
                 CompoundTag data = stack.save(new CompoundTag());
                 // 保存能力 NBT
                 CompoundTag capNBT = null;

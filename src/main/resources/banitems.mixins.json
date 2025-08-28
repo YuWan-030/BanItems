@@ -2,10 +2,7 @@
   "required": true,
   "package": "me.alini.banitems.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": [
-    "InscriptionTableMenuAccessor",
-    "InscriptionTableMenuMixin"
-  ],
+  "mixins": [],
   "injectors": {
     "defaultRequire": 1
   }
