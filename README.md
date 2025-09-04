@@ -61,7 +61,7 @@ The file includes three key sections (auto-generated on first launch):
 
 
 ## Development
-BanItems follows Minecraft Forge best practices, with code structure inspired by community standards and references from [itembarriers](https://github.com/linstarowo/itembarriers) (replace with actual reference if provided).
+BanItems follows Minecraft Forge best practices, with code structure inspired by community standards and references from [itembarriers](https://github.com/linstarowo/itembarriers) .
 
 ### Local Build Setup
 1. **Clone Repository**:
