@@ -1,5 +1,7 @@
 # BanItems Mod
 
+[English](./README.md) | [简体中文](./README.zh-CN.md)
+
 A Minecraft Forge mod designed for server administrators to flexibly manage and restrict in-game items, supporting both soft bans and hard bans to maintain server balance and gameplay rules.
 
 
@@ -52,7 +54,7 @@ The file includes three key sections (auto-generated on first launch):
 {
   "softBannedItems": [],  // Items with restricted functionality (e.g., ["minecraft:ender_pearl"])
   "hardBannedItems": [],  // Items blocked from use/ownership (e.g., ["minecraft:creative_only_item"])
-  "excludedPlayers": []   // Players exempt from ban rules (e.g., ["AdminPlayer123"])
+  "excluded": []          // Item IDs exempt from being replaced in banned item boxes (e.g., ["minecraft:wooden_chest"])
 }
 ```
 - **Edit Tips**: Use the in-game GUI/commands for safer management—manual edits require a `/banitem reload` to take effect.
